@@ -10,7 +10,9 @@ PLANTS = ["🌻", "🌷", "🌹", "🌺", "🌸", "🌼", "🌽", "🥕", "🍓"
 ANIMALS = ["🦋", "🐝", "🐥", "🐰", "🦊", "🦌", "🐿️","🦄","🦥","🐣"]
 
 # Change the URL 
-GARDEN_IMAGE = "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=2000&auto=format&fit=crop"
+##GARDEN_IMAGE = "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?q=80&w=2000&auto=format&fit=crop"
+
+LOCAL_IMAGE_PATH = "Hpylng _background.png"
 
 if not os.path.exists(DB_FILE):
     df = pd.DataFrame(columns=["Date", "Language", "Minutes", "Icon", "PosX", "PosY"])
@@ -23,7 +25,7 @@ def add_entry(lang, mins):
     icon = random.choice(ANIMALS if random.random() > 0.8 else PLANTS)
     #decide the random location in garden
     pos_x = random.randint(5, 90)
-    pos_y = random.randint(20, 80)
+    pos_y = random.randint(60, 90)
     
     new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d"), lang, mins, icon, pos_x, pos_y]], 
                             columns=["Date", "Language", "Minutes", "Icon", "PosX", "PosY"])
@@ -51,11 +53,12 @@ st.markdown(f"""
         position: absolute;
         font-size: 40px;
         transition: all 0.5s ease-in-out;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }}
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🌳 My English & German Growth Garden")
+st.title("🌳 My Language Growth Garden")
 
 # sider bar setting
 with st.sidebar:
