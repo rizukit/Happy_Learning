@@ -8,8 +8,9 @@ import math
 
 # --- Configuration & Assets ---
 DB_FILE = "growth_data.csv"
-PLANTS = ["🌻", "🌷", "🌹", "🌺", "🌸", "🌼", "🌽", "🥕", "🍓", "🍎", "🥦", "🍅", "🍄","🍀"]
-ANIMALS = ["🦋", "🐝", "🐥", "🪿", "🦊", "🦌", "🐿️", "🦄", "🦥", "🐣","🦕","🦌","🦓","🐕","🦩","🦜"]
+PLANTS = ["🌻", "🌷", "🌹", "🌺", "🌸", "🌼", "🌽", "🥕", "🍓", "🍎", "🥦", "🍅", "🍄", "🍀"]
+ANIMALS = ["🦋", "🐝", "🐥", "🪿", "🦊", "🦌", "🐿️", "🦄", "🦥", "🐣", "🦕", "🦓", "🐕", "🦩", "🦜"]
+# Ensure this filename exactly matches your GitHub upload
 LOCAL_IMAGE_PATH = "Hpylng _background2.png"
 
 # --- Database Operations ---
@@ -19,6 +20,7 @@ if not os.path.exists(DB_FILE):
 
 def load_data():
     df = pd.read_csv(DB_FILE)
+    # Self-healing for missing coordinate columns
     if "PosX" not in df.columns:
         df["PosX"] = [random.randint(5, 90) for _ in range(len(df))]
     if "PosY" not in df.columns:
@@ -30,21 +32,22 @@ def add_entry(lang, mins):
     icon = random.choice(ANIMALS if random.random() > 0.8 else PLANTS)
     existing_data = load_data()
     
-    # Define gnome areas to avoid (in percentages)
-    forbidden_areas = [
+    # Coordinates of gnomes to avoid (Percentage of background)
+    gnome_zones = [
         {'x': [10, 30], 'y': [75, 95]},  # Left gnome
         {'x': [55, 85], 'y': [65, 85]},  # Right gnomes
     ]
     
-    # Set minimum distance between emojis to prevent overlapping (in % units)
-    min_dist = 6 
+    # Buffer distance between emojis (in % units)
+    min_dist_between_emojis = 8 
     max_attempts = 100
     
-    best_pos = (random.randint(5, 90), random.randint(65, 85))
+    # Default position in case we can't find a perfect spot
+    final_pos = (random.randint(5, 90), random.randint(65, 85))
     
     for _ in range(max_attempts):
-        pos_x = random.randint(5, 90)
-        pos_y = random.randint(65, 85)
+        test_x = random.randint(5, 90)
+        test_y = random.randint(65, 85)
         
         # Check 1: Gnome Collision
         hits_gnome = any(
@@ -52,7 +55,7 @@ def add_entry(lang, mins):
             for z in gnome_zones
         )
         
-        # Check 2: Emoji Collision
+        # Check 2: Emoji Collision (Check distance to all existing items)
         hits_emoji = False
         for _, row in existing_data.iterrows():
             distance = math.sqrt((test_x - row['PosX'])**2 + (test_y - row['PosY'])**2)
@@ -68,7 +71,7 @@ def add_entry(lang, mins):
                             columns=["Date", "Language", "Minutes", "Icon", "PosX", "PosY"])
     new_data.to_csv(DB_FILE, mode='a', header=False, index=False)
     return icon
-    
+
 # --- Background Image Processing ---
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
@@ -100,13 +103,14 @@ st.markdown(f"""
     .emoji-item {{
         position: absolute;
         font-size: 50px;
+        transform: translate(-50%, -50%);
         transition: all 0.5s ease-in-out;
         filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4));
     }}
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🌳 My Language Growth Garden🌳")
+st.title("🌳 My Language Growth Garden 🌳")
 
 # --- Sidebar Management ---
 with st.sidebar:
@@ -146,6 +150,7 @@ edited_data = st.data_editor(
         "Icon": st.column_config.Column(disabled=True),
         "PosX": st.column_config.Column(disabled=True),
         "PosY": st.column_config.Column(disabled=True),
+        "Date": st.column_config.Column(disabled=True),
     }
 )
 
