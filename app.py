@@ -35,7 +35,7 @@ def add_entry(lang, mins):
     # Define gnome areas to avoid (percentage of the background)
     gnome_zones = [
         {'x': [10, 30], 'y': [75, 100]},  # Left walking gnome
-        {'x': [55, 85], 'y': [65, 90]},  # Right farming gnomes
+        {'x': [47, 85], 'y': [65, 92]},  # Right farming gnomes
     ]
     
     # Distance required between emojis to prevent overlapping
