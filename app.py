@@ -76,7 +76,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🌳 My Happy Language Growth Garden")
+st.title("🌳 Happy Language Growth Garden")
 
 with st.sidebar:
     st.header("Log Your Progress")
