@@ -10,7 +10,7 @@ import math
 DB_FILE = "growth_data.csv"
 PLANTS = ["🌻", "🌷", "🌹", "🌺", "🌸", "🌼", "🌽", "🥕", "🍓", "🍎", "🥦", "🍅", "🍄","🍀"]
 ANIMALS = ["🦋", "🐝", "🐥", "🪿", "🦊", "🦌", "🐿️", "🦄", "🦥", "🐣","🦕","🦌","🦓","🐕","🦩","🦜"]
-LOCAL_IMAGE_PATH = "Hpylng _background.png"
+LOCAL_IMAGE_PATH = "Hpylng _background2.png"
 
 # --- Database Operations ---
 if not os.path.exists(DB_FILE):
