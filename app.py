@@ -46,7 +46,7 @@ def get_base64_of_bin_file(bin_file):
     return base64.b64encode(data).decode()
 
 # --- Dashboard UI ---
-st.set_page_config(page_title="My Language Garden", layout="wide")
+st.set_page_config(page_title="My Happy Language Garden", layout="wide")
 
 if os.path.exists(LOCAL_IMAGE_PATH):
     img_base64 = get_base64_of_bin_file(LOCAL_IMAGE_PATH)
@@ -76,7 +76,7 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🌳 My Language Growth Garden")
+st.title("🌳 My Happy Language Growth Garden")
 
 with st.sidebar:
     st.header("Log Your Progress")
@@ -101,5 +101,5 @@ garden_html += '</div>'
 
 st.markdown(garden_html, unsafe_allow_html=True)
 
-with st.expander("View Full Achievement History"):
+with st.expander("View Amazing Achievement History"):
     st.dataframe(data)
