@@ -4,26 +4,21 @@ import random
 from datetime import datetime
 import os
 import base64
+import math
 
 # --- Configuration & Assets ---
 DB_FILE = "growth_data.csv"
-# Emoji pools for flowers/crops and animals
-PLANTS = ["🌻", "🌷", "🌹", "🌺", "🌸", "🌼", "🌽", "🥕", "🍓", "🍎", "🥦", "🍅", "🍄"]
-ANIMALS = ["🦋", "🐝", "🐥", "🐰", "🦊", "🦌", "🐿️", "🦄", "🦥", "🐣","🐐","🐑","🦙"]
-
-# Ensure this matches your GitHub filename exactly
-LOCAL_IMAGE_PATH = "Hpylng _background2.png"
+PLANTS = ["🌻", "🌷", "🌹", "🌺", "🌸", "🌼", "🌽", "🥕", "🍓", "🍎", "🥦", "🍅", "🍄","🍀"]
+ANIMALS = ["🦋", "🐝", "🐥", "🪿", "🦊", "🦌", "🐿️", "🦄", "🦥", "🐣","🦕","🦌","🦓","🐕","🦩","🦜"]
+LOCAL_IMAGE_PATH = "Hpylng _background.png"
 
 # --- Database Operations ---
 if not os.path.exists(DB_FILE):
-    # Initialize a new database if the file is missing
     df = pd.DataFrame(columns=["Date", "Language", "Minutes", "Icon", "PosX", "PosY"])
     df.to_csv(DB_FILE, index=False)
 
 def load_data():
-    # We use cache_data to prevent unnecessary reloading
     df = pd.read_csv(DB_FILE)
-    # SELF-HEALING: If PosX or PosY columns are missing from old data, fix them automatically
     if "PosX" not in df.columns:
         df["PosX"] = [random.randint(5, 90) for _ in range(len(df))]
     if "PosY" not in df.columns:
@@ -32,30 +27,44 @@ def load_data():
     return df
 
 def add_entry(lang, mins):
-    # 20% chance for an animal icon, 80% chance for a plant
     icon = random.choice(ANIMALS if random.random() > 0.8 else PLANTS)
+    existing_data = load_data()
     
-    # Define "Forbidden Areas" to prevent emojis from overlapping the gnomes
+    # Define gnome areas to avoid (in percentages)
     forbidden_areas = [
-        {'x': [10, 30], 'y': [75, 95]},  # Left gnome area
-        {'x': [55, 85], 'y': [65, 85]},  # Right gnomes area
+        {'x': [10, 30], 'y': [75, 95]},  # Left gnome
+        {'x': [55, 85], 'y': [65, 85]},  # Right gnomes
     ]
     
-    while True:
+    # Set minimum distance between emojis to prevent overlapping (in % units)
+    min_dist = 6 
+    max_attempts = 100
+    
+    best_pos = (random.randint(5, 90), random.randint(65, 85))
+    
+    for _ in range(max_attempts):
         pos_x = random.randint(5, 90)
         pos_y = random.randint(65, 85)
         
-        is_overlapping = False
-        for area in forbidden_areas:
-            if (area['x'][0] <= pos_x <= area['x'][1]) and (area['y'][0] <= pos_y <= area['y'][1]):
-                is_overlapping = True
+        # Check 1: Gnome Collision
+        in_gnome_zone = any(
+            area['x'][0] <= pos_x <= area['x'][1] and area['y'][0] <= pos_y <= area['y'][1] 
+            for area in forbidden_areas
+        )
+        
+        # Check 2: Emoji Collision (Check distance to all existing emojis)
+        too_close_to_others = False
+        for _, row in existing_data.iterrows():
+            dist = math.sqrt((pos_x - row['PosX'])**2 + (pos_y - row['PosY'])**2)
+            if dist < min_dist:
+                too_close_to_others = True
                 break
         
-        if not is_overlapping:
+        if not in_gnome_zone and not too_close_to_others:
+            best_pos = (pos_x, pos_y)
             break
             
-    # Save the new achievement to the CSV
-    new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d"), lang, mins, icon, pos_x, pos_y]], 
+    new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d"), lang, mins, icon, best_pos[0], best_pos[1]]], 
                             columns=["Date", "Language", "Minutes", "Icon", "PosX", "PosY"])
     new_data.to_csv(DB_FILE, mode='a', header=False, index=False)
     return icon
@@ -97,9 +106,9 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🌳 My Language Growth Garden")
+st.title("🌳 My Language Growth Garden🌳")
 
-# --- Sidebar Inputs ---
+# --- Sidebar Management ---
 with st.sidebar:
     st.header("Log Your Progress")
     language = st.selectbox("Language", ["English", "German"])
@@ -109,41 +118,37 @@ with st.sidebar:
         add_entry(language, minutes)
         st.success("Wonderful!!") 
         st.balloons()
-        st.rerun() # Refresh to show new emoji immediately
+        st.rerun()
 
-# --- Stats & Garden Visualization ---
+# --- Visualization & Editing ---
 data = load_data()
 
-# Summary Metrics
 col1, col2 = st.columns(2)
 col1.metric("English Total", f"{data[data['Language']=='English']['Minutes'].sum()} min")
 col2.metric("German Total", f"{data[data['Language']=='German']['Minutes'].sum()} min")
 
-# Generate the interactive garden HTML
+# Render Garden
 garden_html = '<div class="garden-container">'
 for _, row in data.iterrows():
     garden_html += f'<div class="emoji-item" style="left: {row["PosX"]}%; top: {row["PosY"]}%;">{row["Icon"]}</div>'
 garden_html += '</div>'
-
 st.markdown(garden_html, unsafe_allow_html=True)
 
-# --- NEW: Edit & Achievement History ---
+# History Management Table
 st.subheader("Manage Your Achievements")
-st.info("💡 You can edit 'Minutes' directly or delete a row by selecting it and pressing 'Delete' on your keyboard.")
+st.info("💡 Edit minutes directly or select a row and press 'Delete' to remove an entry.")
 
-# The data_editor allows live editing of the dataframe
 edited_data = st.data_editor(
     data, 
-    num_rows="dynamic", # Allows deleting rows
+    num_rows="dynamic",
     use_container_width=True,
     column_config={
-        "Icon": st.column_config.Column(disabled=True), # Prevent editing positions or icons
+        "Icon": st.column_config.Column(disabled=True),
         "PosX": st.column_config.Column(disabled=True),
         "PosY": st.column_config.Column(disabled=True),
     }
 )
 
-# If the data has changed, save it back to the CSV file
 if not edited_data.equals(data):
     edited_data.to_csv(DB_FILE, index=False)
-    st.rerun() # Refresh the garden and stats automatically
+    st.rerun()
