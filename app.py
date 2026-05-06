@@ -47,28 +47,28 @@ def add_entry(lang, mins):
         pos_y = random.randint(65, 85)
         
         # Check 1: Gnome Collision
-        in_gnome_zone = any(
-            area['x'][0] <= pos_x <= area['x'][1] and area['y'][0] <= pos_y <= area['y'][1] 
-            for area in forbidden_areas
+        hits_gnome = any(
+            z['x'][0] <= test_x <= z['x'][1] and z['y'][0] <= test_y <= z['y'][1] 
+            for z in gnome_zones
         )
         
-        # Check 2: Emoji Collision (Check distance to all existing emojis)
-        too_close_to_others = False
+        # Check 2: Emoji Collision
+        hits_emoji = False
         for _, row in existing_data.iterrows():
-            dist = math.sqrt((pos_x - row['PosX'])**2 + (pos_y - row['PosY'])**2)
-            if dist < min_dist:
-                too_close_to_others = True
+            distance = math.sqrt((test_x - row['PosX'])**2 + (test_y - row['PosY'])**2)
+            if distance < min_dist_between_emojis:
+                hits_emoji = True
                 break
         
-        if not in_gnome_zone and not too_close_to_others:
-            best_pos = (pos_x, pos_y)
+        if not hits_gnome and not hits_emoji:
+            final_pos = (test_x, test_y)
             break
             
-    new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d"), lang, mins, icon, best_pos[0], best_pos[1]]], 
+    new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d"), lang, mins, icon, final_pos[0], final_pos[1]]], 
                             columns=["Date", "Language", "Minutes", "Icon", "PosX", "PosY"])
     new_data.to_csv(DB_FILE, mode='a', header=False, index=False)
     return icon
-
+    
 # --- Background Image Processing ---
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
