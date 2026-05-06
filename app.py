@@ -84,6 +84,7 @@ with st.sidebar:
     minutes = st.number_input("Speaking Time (min)", min_value=1, value=30)
     if st.button("Plant in Garden"):
         add_entry(language, minutes)
+        st.success("Wonderful!!")
         st.balloons()
 
 # Load data and fix missing columns if necessary
