@@ -10,7 +10,6 @@ import math
 DB_FILE = "growth_data.csv"
 PLANTS = ["🌻", "🌷", "🌹", "🌺", "🌸", "🌼", "🌽", "🥕", "🍓", "🍎", "🥦", "🍅", "🍄", "🍀"]
 ANIMALS = ["🦋", "🐝", "🐥", "🪿", "🦊", "🦌", "🐿️", "🦄", "🦥", "🐣", "🦕", "🦓", "🐕", "🦩", "🦜"]
-# Ensure this filename exactly matches your GitHub upload
 LOCAL_IMAGE_PATH = "Hpylng _background2.png"
 
 # --- Database Operations ---
@@ -20,7 +19,7 @@ if not os.path.exists(DB_FILE):
 
 def load_data():
     df = pd.read_csv(DB_FILE)
-    # Self-healing for missing coordinate columns
+    # Self-healing: adds coordinates to old data entries if they are missing
     if "PosX" not in df.columns:
         df["PosX"] = [random.randint(5, 90) for _ in range(len(df))]
     if "PosY" not in df.columns:
@@ -29,45 +28,49 @@ def load_data():
     return df
 
 def add_entry(lang, mins):
+    # Choose a random icon
     icon = random.choice(ANIMALS if random.random() > 0.8 else PLANTS)
     existing_data = load_data()
     
-    # Coordinates of gnomes to avoid (Percentage of background)
+    # Define gnome areas to avoid (percentage of the background)
     gnome_zones = [
-        {'x': [10, 30], 'y': [75, 95]},  # Left gnome
-        {'x': [55, 85], 'y': [65, 85]},  # Right gnomes
+        {'x': [10, 30], 'y': [75, 95]},  # Left walking gnome
+        {'x': [55, 85], 'y': [65, 85]},  # Right farming gnomes
     ]
     
-    # Buffer distance between emojis (in % units)
-    min_dist_between_emojis = 8 
+    # Distance required between emojis to prevent overlapping
+    min_dist = 8 
     max_attempts = 100
     
-    # Default position in case we can't find a perfect spot
-    final_pos = (random.randint(5, 90), random.randint(65, 85))
+    # Start with a default position
+    final_x, final_y = random.randint(5, 90), random.randint(65, 85)
     
+    # Collision Detection Loop
     for _ in range(max_attempts):
         test_x = random.randint(5, 90)
         test_y = random.randint(65, 85)
         
-        # Check 1: Gnome Collision
+        # Check 1: Does it hit a gnome?
         hits_gnome = any(
             z['x'][0] <= test_x <= z['x'][1] and z['y'][0] <= test_y <= z['y'][1] 
             for z in gnome_zones
         )
         
-        # Check 2: Emoji Collision (Check distance to all existing items)
+        # Check 2: Does it hit an existing emoji?
         hits_emoji = False
         for _, row in existing_data.iterrows():
             distance = math.sqrt((test_x - row['PosX'])**2 + (test_y - row['PosY'])**2)
-            if distance < min_dist_between_emojis:
+            if distance < min_dist:
                 hits_emoji = True
                 break
         
+        # If the spot is clear, save it and break the loop
         if not hits_gnome and not hits_emoji:
-            final_pos = (test_x, test_y)
+            final_x, final_y = test_x, test_y
             break
             
-    new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d"), lang, mins, icon, final_pos[0], final_pos[1]]], 
+    # Save the successful achievement
+    new_data = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d"), lang, mins, icon, final_x, final_y]], 
                             columns=["Date", "Language", "Minutes", "Icon", "PosX", "PosY"])
     new_data.to_csv(DB_FILE, mode='a', header=False, index=False)
     return icon
@@ -78,7 +81,7 @@ def get_base64_of_bin_file(bin_file):
         data = f.read()
     return base64.b64encode(data).decode()
 
-# --- Application Layout ---
+# --- Page Layout ---
 st.set_page_config(page_title="My Language Garden", layout="wide")
 
 if os.path.exists(LOCAL_IMAGE_PATH):
@@ -103,7 +106,7 @@ st.markdown(f"""
     .emoji-item {{
         position: absolute;
         font-size: 50px;
-        transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%); /* Centers the emoji on the coordinate */
         transition: all 0.5s ease-in-out;
         filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4));
     }}
@@ -112,7 +115,7 @@ st.markdown(f"""
 
 st.title("🌳 My Language Growth Garden 🌳")
 
-# --- Sidebar Management ---
+# --- Control Panel ---
 with st.sidebar:
     st.header("Log Your Progress")
     language = st.selectbox("Language", ["English", "German"])
@@ -124,23 +127,23 @@ with st.sidebar:
         st.balloons()
         st.rerun()
 
-# --- Visualization & Editing ---
+# --- Visualization ---
 data = load_data()
 
 col1, col2 = st.columns(2)
 col1.metric("English Total", f"{data[data['Language']=='English']['Minutes'].sum()} min")
 col2.metric("German Total", f"{data[data['Language']=='German']['Minutes'].sum()} min")
 
-# Render Garden
+# Generate the Garden HTML
 garden_html = '<div class="garden-container">'
 for _, row in data.iterrows():
     garden_html += f'<div class="emoji-item" style="left: {row["PosX"]}%; top: {row["PosY"]}%;">{row["Icon"]}</div>'
 garden_html += '</div>'
 st.markdown(garden_html, unsafe_allow_html=True)
 
-# History Management Table
+# --- Management Table ---
 st.subheader("Manage Your Achievements")
-st.info("💡 Edit minutes directly or select a row and press 'Delete' to remove an entry.")
+st.info("💡 Edit 'Minutes' directly or delete a row to update your garden.")
 
 edited_data = st.data_editor(
     data, 
